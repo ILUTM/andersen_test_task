@@ -9,6 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
+# Environment detection
+ENVIRONMENT = os.getenv('DJANGO_ENVIRONMENT', 'development')
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-development-key")
 
@@ -19,17 +22,21 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
+    # main app
+    # ==============================
+    'to_do_list.apps.ToDoListConfig',
+    # ==============================
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
     'rest_framework',
     'corsheaders',
     'drf_yasg',
     'rest_framework_simplejwt',
-    'to_do_list.apps.ToDoListConfig'
 ]
 
 MIDDLEWARE = [
@@ -100,6 +107,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+#user settings
+AUTH_USER_MODEL = 'to_do_list.User'
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = ('username')
+
 # CORS Settings (for development)
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
@@ -124,3 +136,21 @@ SIMPLE_JWT = {
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+# Environment-specific overrides
+if ENVIRONMENT == 'production':
+    DEBUG = False
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+    CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    
+    # Security settings
+    SECURE_HSTS_SECONDS = 3600
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+else:
+    DEBUG = True
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
