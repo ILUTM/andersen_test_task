@@ -1,13 +1,15 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework import viewsets, status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError 
 from .models import User, Task
-from .serializers import UserRegistrationSerializer, UserSerializer, LoginSerializer
+from .serializers import UserRegistrationSerializer, UserSerializer, LoginSerializer, TaskSerializer
 from .utils import CreateResponse
+from .permissions import IsTaskCreator
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -92,3 +94,85 @@ class LoginViewSet(viewsets.ViewSet):
             domain=None,  # Let browser handle domain
         )
         return response
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend]  
+    ordering_fields = ['created_at', 'updated_at', 'title']
+    search_fields = ['title']
+    ordering = ['-created_at']
+    filterset_fields = ['status']  
+
+    def get_queryset(self):
+        # Filter by status if provided in query params
+        queryset = Task.objects.all()
+        status = self.request.query_params.get('status', None)
+        if status is not None:
+            queryset = queryset.filter(status=status)
+        return queryset
+
+    def get_permissions(self):
+        # Only require IsTaskCreator for update/delete actions
+        if self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAuthenticated, IsTaskCreator]
+        return super().get_permissions()
+
+    def perform_create(self, serializer):
+        # Automatically set the user to the current user when creating
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def my_tasks(self, request):
+        tasks = Task.objects.filter(user=request.user)
+        page = self.paginate_queryset(tasks)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(tasks, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsTaskCreator])
+    def complete(self, request, pk=None):
+        # Mark a task as completed
+        task = self.get_object()
+        task.status = 'COMPLETED'
+        task.save()
+        serializer = self.get_serializer(task)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsTaskCreator])
+    def update_title(self, request, pk=None):
+        task = self.get_object()
+        
+        if not task.can_edit_title():
+            return Response(
+                {"detail": "Title can only be updated within 5 minutes of creation"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        title = request.data.get('title')
+        if not title:
+            return Response(
+                {"detail": "Title is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        task.title = title
+        task.save()
+        return Response(self.get_serializer(task).data)
+    
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsTaskCreator])
+    def update_description(self, request, pk=None):
+        task = self.get_object()
+        description = request.data.get('description', '')
+        
+        task.description = description
+        task.save()
+        return Response(self.get_serializer(task).data)
+    
+    def destroy(self, request, *args, **kwargs):
+        task = self.get_object()
+        self.perform_destroy(task)
+        return Response(status=status.HTTP_204_NO_CONTENT)

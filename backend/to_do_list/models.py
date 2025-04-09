@@ -1,4 +1,6 @@
+from datetime import timedelta
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinLengthValidator
 
@@ -48,12 +50,17 @@ class Task(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.title} ({self.get_status_display()})"
+        return f"{self.title} ({self.status})"
+    
+    def can_edit_title(self):
+        """Check if title can still be edited (within 5 minutes of creation)"""
+        return timezone.now() < self.created_at + timedelta(minutes=5)
     
     class Meta:
         unique_together = ('user', 'title')
         indexes = [
             models.Index(fields=['title']),
+            models.Index(fields=['status']),
         ]
         verbose_name = 'Task'
-        verbose_name_plural = 'Tasks'
+        verbose_name_plural = 'Tasks'    

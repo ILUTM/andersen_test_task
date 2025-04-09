@@ -55,3 +55,18 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('User account is disabled.')
         data['user'] = user
         return data
+    
+
+class TaskSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+    
+    class Meta:
+        model = Task
+        fields = ('id', 'user', 'title', 'description', 'created_at', 'updated_at')
+        read_only_fields = ('user', 'created_at', 'updated_at')
+        
+    def validate_status(self, value):
+        if value not in dict(Task.STATUS_CHOICES):
+            raise serializers.ValidationError("Invalid status")
+        return value
+     
