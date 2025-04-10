@@ -45,22 +45,24 @@ export const apiFetch = async (url, options = {}) => {
 };
 
 // Try to refresh access token
-const tryRefreshToken = async () => {
+export const tryRefreshToken = async () => {
   try {
-    const response = await fetch(API.AUTH.TOKEN.REFRESH, {  // Fixed path
+    const response = await fetch(API.AUTH.TOKEN.REFRESH, {
       method: 'POST',
-      credentials: 'include', // Send HTTP-only cookie
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
-      return false;
+      return null;
     }
 
-    const data = await response.json();
-    storeAccessToken(data.access);
-    return true;
+    return await response.json();
   } catch (error) {
-    return false;
+    console.error('Refresh token failed:', error);
+    return null;
   }
 };
 

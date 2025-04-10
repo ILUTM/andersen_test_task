@@ -10,6 +10,35 @@ from .models import User, Task
 from .serializers import UserRegistrationSerializer, UserSerializer, LoginSerializer, TaskSerializer
 from .utils import CreateResponse
 from .permissions import IsTaskCreator
+from rest_framework_simplejwt.views import TokenRefreshView
+
+class CookieTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token:
+            request.data['refresh'] = refresh_token
+            
+        response = super().post(request, *args, **kwargs)
+        
+        # If refresh was successful, add user data
+        if response.status_code == 200 and 'access' in response.data:
+            try:
+                # Get user from refresh token
+                refresh = RefreshToken(refresh_token)
+                user_id = refresh.payload.get('user_id')
+                user = User.objects.get(id=user_id)
+                
+                # Add user data to response
+                response.data['user'] = {
+                    'id': user.id,
+                    'username': user.username,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                }
+            except (User.DoesNotExist, TokenError):
+                pass
+                
+        return response
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -92,13 +121,32 @@ class LoginViewSet(viewsets.ViewSet):
             value=str(refresh),
             max_age=1209600,  # 14 days
             httponly=True,
-            secure=True,  # Must match SameSite=None
-            samesite='None',  # Crucial for cross-origin
-            path='/',
-            domain=None,  # Let browser handle domain
+            secure=True,
+            samesite='None',
+            path='/api/token/refresh/',
         )
         return response
 
+
+class LogoutViewSet(viewsets.ViewSet):
+    def create(self, request):
+        try:
+            refresh_token = request.COOKIES.get('refresh_token')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            
+            response = Response(
+                {"detail": "Successfully logged out."},
+                status=status.HTTP_200_OK
+            )
+            response.delete_cookie('refresh_token')
+            return response
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
@@ -108,6 +156,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     search_fields = ['title']
     ordering = ['-created_at']
     filterset_fields = ['status']  
+    pagination_class = None 
 
     def get_queryset(self):
         # Filter by status if provided in query params

@@ -14,18 +14,19 @@ const HomePage = () => {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      try {
-        setLoading(true);
-        const params = statusFilter ? { status: statusFilter } : {};
-        const data = await apiFetch(API.TASKS.BASE, { params });
-        setTasks(data);
-      } catch (err) {
-        setError('Failed to fetch tasks');
-        console.error('Error fetching tasks:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+        try {
+          setLoading(true);
+          const params = statusFilter ? { status: statusFilter } : {};
+          const response = await apiFetch(API.TASKS.BASE, { params });
+          console.log('API Response:', response); 
+          setTasks(response);
+        } catch (err) {
+          setError('Failed to fetch tasks');
+          console.error('Error fetching tasks:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
 
     if (isAuthenticated) {
       fetchTasks();

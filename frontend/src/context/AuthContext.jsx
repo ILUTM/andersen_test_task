@@ -13,36 +13,31 @@ export const AuthProvider = ({ children }) => {
   // Check auth status on initial load
   useEffect(() => {
     const checkAuth = async () => {
+      setIsLoading(true);
       try {
-        // First try to get user data with existing token
+        // First try with existing access token
         const userData = await getUserData();
         if (userData) {
           setUser(userData);
           setIsAuthenticated(true);
           return;
         }
-
-        // If no user data, try to refresh token
-        const refreshed = await tryRefreshToken();
-        if (refreshed) {
-          const refreshedUserData = await getUserData();
-          if (refreshedUserData) {
-            setUser(refreshedUserData);
-            setIsAuthenticated(true);
-            return;
-          }
+  
+        // If that fails, try refresh
+        const refreshData = await tryRefreshToken();
+        if (refreshData) {
+          setUser(refreshData.user);
+          setIsAuthenticated(true);
+          return;
         }
-
-        // If all fails, show auth modal
-        setAuthModalType('login');
-      } catch (error) {
-        console.error('Auth check failed:', error);
+  
+        // If all fails, show login
         setAuthModalType('login');
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     checkAuth();
   }, []);
 
@@ -61,14 +56,27 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         credentials: 'include',
       });
-
-      if (!response.ok) return false;
-
+  
+      if (!response.ok) return null;
+      
       const data = await response.json();
+      
+      // Handle both old and new response formats
+      const userData = data.user || {
+        id: data.id,
+        username: data.username,
+        first_name: data.first_name,
+        last_name: data.last_name,
+      };
+      
       storeAccessToken(data.access);
-      return true;
+      return {
+        access: data.access,
+        user: userData
+      };
     } catch (error) {
-      return false;
+      console.error('Token refresh failed:', error);
+      return null;
     }
   };
 
