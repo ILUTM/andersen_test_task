@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_BASE_URL || '/api';
+const API_BASE = process.env.REACT_APP_API_BASE_URL || '';
 
 const API = {
   AUTH: {
@@ -10,15 +10,18 @@ const API = {
       VERIFY: `${API_BASE}/api/token/verify/`,
     },
     ME: `${API_BASE}/api/users/me/`, // For the 'me' action
+    LOGOUT: `${API_BASE}/api/logout/`,
+    UPDATE_FIELD: `${API_BASE}/api/users/update_field/`,
   },
   USERS: {
     BASE: `${API_BASE}/api/users/`,
     BY_ID: (id) => `${API_BASE}/api/users/${id}/`,
-    UPDATE_FIELD: `${API_BASE}/api/users/update_field/`, // For update_field action
+    GET_USER: (id) => `${API_BASE}/api/users/${id}/get_user/`, // For update_field action
   },
   TASKS: {
     BASE: `${API_BASE}/api/tasks/`,
     MY_TASKS: `${API_BASE}/api/tasks/my_tasks/`,
+    SEARCH: `${API_BASE}/api/tasks/search/`,
     BY_ID: (id) => `${API_BASE}/api/tasks/${id}/`,
     COMPLETE: (id) => `${API_BASE}/api/tasks/${id}/complete/`,
     UPDATE_TITLE: (id) => `${API_BASE}/api/tasks/${id}/update_title/`,

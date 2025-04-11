@@ -223,8 +223,18 @@ class TaskViewSet(viewsets.ModelViewSet):
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        
+        return Response({
+            'pagination': {
+                'next': None,
+                'previous': None,
+                'current_page': 1,
+                'total_pages': 1,
+                'page_size': self.pagination_class.page_size,
+                'total_items': queryset.count()
+            },
+            'results': []
+        })
 
     @action(detail=False, methods=['get'])
     def my_tasks(self, request):

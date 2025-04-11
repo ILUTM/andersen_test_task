@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }) => {
       clearAuthTokens();
       setUser(null);
       setIsAuthenticated(false);
-      setAuthModalType('login'); // Show login modal after logout
+      setAuthModalType('login');
     }
   };
 

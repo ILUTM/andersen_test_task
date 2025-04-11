@@ -1,0 +1,10 @@
+.task-controls {
+    margin: 1rem 0;
+}
+
+.status-filter {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+}

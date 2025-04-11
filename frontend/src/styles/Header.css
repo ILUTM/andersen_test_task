@@ -83,3 +83,27 @@
 .logout-button:hover {
     background-color: #c0392b;
 }
+
+.my-tasks-button {
+    margin-left: 20px;
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.my-tasks-button:hover {
+    background-color: #45a049;
+}
+
+.task-controls {
+    margin-left: 20px;
+}
+
+.task-controls select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}

@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../api/endpoints';
 import TasksList from '../../components/tasks/TasksList';
 import { apiFetch } from '../../api/fetch';
 
-const HomePage = () => {
-  const { isAuthenticated } = useAuth();
+const MyTasksPage = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,8 +16,10 @@ const HomePage = () => {
     total_items: 0
   });
 
+  const { isAuthenticated } = useAuth();
+
   const buildEndpoint = useCallback((page = 1) => {
-    const url = new URL(API.TASKS.BASE, window.location.origin);
+    const url = new URL(API.TASKS.MY_TASKS, window.location.origin);
     url.searchParams.append('page', page);
     url.searchParams.append('page_size', 10);
     if (statusFilter) {
@@ -31,10 +32,9 @@ const HomePage = () => {
     try {
       setLoading(true);
       const endpoint = buildEndpoint(page);
-      console.log('Fetching tasks from:', endpoint);
+      console.log('Fetching my tasks from:', endpoint);
       
       const response = await apiFetch(endpoint, {});
-      console.log('Received response:', response);
       
       if (response && response.results) {
         setTasks(response.results);
@@ -46,8 +46,7 @@ const HomePage = () => {
         });
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch tasks');
-      console.error('Fetch error:', err);
+      setError(err.message || 'Failed to fetch my tasks');
     } finally {
       setLoading(false);
     }
@@ -57,7 +56,7 @@ const HomePage = () => {
     if (isAuthenticated) {
       fetchTasks(pagination.current_page);
     }
-  }, [isAuthenticated, fetchTasks]);
+  }, [fetchTasks, isAuthenticated]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.total_pages) {
@@ -66,16 +65,11 @@ const HomePage = () => {
   };
 
   if (!isAuthenticated) {
-    return (
-      <div className="homepage">
-        <h1>Welcome to Task Manager</h1>
-        <p>Please login to view and manage your tasks</p>
-      </div>
-    );
+    return null;
   }
 
   if (loading && tasks.length === 0) {
-    return <div className="loading">Loading tasks...</div>;
+    return <div className="loading">Loading my tasks...</div>;
   }
 
   if (error) {
@@ -84,7 +78,7 @@ const HomePage = () => {
 
   return (
     <TasksList
-      title="All Tasks"
+      title="My Tasks"
       tasks={tasks}
       statusFilter={statusFilter}
       setStatusFilter={setStatusFilter}
@@ -94,4 +88,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default MyTasksPage;

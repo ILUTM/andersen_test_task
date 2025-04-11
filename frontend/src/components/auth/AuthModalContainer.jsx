@@ -7,7 +7,7 @@ const AuthModalContainer = () => {
   const { 
     authModalType,
     isAuthenticated,
-    setAuthModalType // Add this
+    setAuthModalType 
   } = useAuth();
 
   // Don't show modal if authenticated or no modal type

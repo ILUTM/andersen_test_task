@@ -5,11 +5,11 @@ const TaskCard = ({ task }) => {
   const { user } = useAuth();
   
   return (
-    <div className={`task-card ${task.status.toLowerCase()}`}>
+    <div className={`task-card ${task.status}`}>
       <h3>{task.title}</h3>
       <p className="description">{task.description || 'No description'}</p>
       <div className="task-meta">
-        <span className={`status ${task.status.toLowerCase()}`}>
+        <span className={`status ${task.status}`}>
           {task.status}
         </span>
         <span className="date">
