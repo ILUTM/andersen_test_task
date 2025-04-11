@@ -1,7 +1,9 @@
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
@@ -148,54 +150,131 @@ class LogoutViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+
+class TaskPaginator(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    
+    def get_paginated_response(self, data):
+        return Response({
+            'pagination': {
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link(),
+                'current_page': self.page.number,
+                'total_pages': self.page.paginator.num_pages,
+                'page_size': self.page_size,
+                'total_items': self.page.paginator.count
+            },
+            'results': data
+        })
+        
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend]  
-    ordering_fields = ['created_at', 'updated_at', 'title']
-    search_fields = ['title']
-    ordering = ['-created_at']
-    filterset_fields = ['status']  
-    pagination_class = None 
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend]
+    ordering_fields = ['created_at', 'updated_at', 'status', 'title']
+    search_fields = ['title', 'description']
+    ordering = ['-created_at']  # Default ordering
+    filterset_fields = ['status']
+    pagination_class = TaskPaginator
+
+    def get_base_queryset(self):
+        """Base queryset without any user filtering"""
+        return Task.objects.all()
 
     def get_queryset(self):
-        # Filter by status if provided in query params
-        queryset = Task.objects.all()
-        status = self.request.query_params.get('status', None)
-        if status is not None:
-            queryset = queryset.filter(status=status)
+        """
+        Returns queryset filtered based on request parameters and user permissions.
+        This is used by DRF for the standard list/retrieve/update/destroy actions.
+        """
+        queryset = self.get_base_queryset()
+        
+        # For standard list view, show all tasks (or filter by user_id if provided)
+        user_id = self.request.query_params.get('user_id')
+        if user_id:
+            queryset = queryset.filter(user__id=user_id)
+            
         return queryset
 
     def get_permissions(self):
-        # Only require IsTaskCreator for update/delete actions
+        """
+        Custom permission handling:
+        - For update/delete actions: require IsTaskCreator
+        """
         if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsAuthenticated, IsTaskCreator]
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        # Automatically set the user to the current user when creating
+        """Automatically set the user to the current user when creating a task."""
         serializer.save(user=self.request.user)
 
-    @action(detail=False, methods=['get'])
-    def my_tasks(self, request):
-        tasks = Task.objects.filter(user=request.user)
-        page = self.paginate_queryset(tasks)
+    def _get_filtered_queryset(self, base_queryset=None):
+        """
+        Shared method to apply filtering, ordering and searching to any queryset.
+        """
+        queryset = base_queryset if base_queryset is not None else self.get_base_queryset()
+        return self.filter_queryset(queryset)
+
+    def _get_paginated_response(self, queryset):
+        """Shared method to paginate and serialize a queryset"""
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(tasks, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsTaskCreator])
+    @action(detail=False, methods=['get'])
+    def my_tasks(self, request):
+        """
+        Get all tasks for the currently authenticated user.
+        Supports all the same filtering/ordering as the main list view.
+        """
+        queryset = self.get_base_queryset().filter(user=request.user)
+        filtered_queryset = self._get_filtered_queryset(queryset)
+        return self._get_paginated_response(filtered_queryset)
+
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """
+        Search tasks by title containing the search term.
+        Supports all the same filtering/ordering as the main list view.
+        """
+        search_term = request.query_params.get('q')
+        if not search_term:
+            return Response(
+                {"detail": "Search term 'q' is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Start with base search queryset
+        queryset = self.get_base_queryset().filter(
+            Q(title__icontains=search_term)
+        )
+        
+        # Apply all filters and ordering
+        filtered_queryset = self._get_filtered_queryset(queryset)
+        return self._get_paginated_response(filtered_queryset)
+
+    def list(self, request, *args, **kwargs):
+        """
+        List all tasks (or filtered by user_id if provided).
+        Supports filtering by status and ordering by any field.
+        """
+        queryset = self._get_filtered_queryset()
+        return self._get_paginated_response(queryset)
+
+    @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
-        # Mark a task as completed
         task = self.get_object()
         task.status = 'COMPLETED'
         task.save()
         serializer = self.get_serializer(task)
         return Response(serializer.data)
-    
-    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsTaskCreator])
+
+    @action(detail=True, methods=['patch'])
     def update_title(self, request, pk=None):
         task = self.get_object()
         
@@ -212,6 +291,12 @@ class TaskViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
             
+        if Task.objects.filter(user=task.user, title=title).exclude(pk=task.pk).exists():
+            return Response(
+                {"detail": "You already have a task with this title"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         task.title = title
         task.save()
         return Response(self.get_serializer(task).data)
@@ -224,8 +309,11 @@ class TaskViewSet(viewsets.ModelViewSet):
         task.description = description
         task.save()
         return Response(self.get_serializer(task).data)
-    
+
     def destroy(self, request, *args, **kwargs):
         task = self.get_object()
         self.perform_destroy(task)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Task deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT
+        )
