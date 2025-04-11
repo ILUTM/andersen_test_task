@@ -62,7 +62,7 @@ class TaskSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Task
-        fields = ('id', 'user', 'title', 'description', 'created_at', 'updated_at')
+        fields = ('id', 'user', 'title', 'description', 'status', 'created_at', 'updated_at')
         read_only_fields = ('user', 'created_at', 'updated_at')
         
     def validate_status(self, value):

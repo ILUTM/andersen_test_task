@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import CreateTaskModal from '../tasks/CreateTaskModal';
 import { apiFetch } from '../../api/fetch';
 import API from '../../api/endpoints';
@@ -8,11 +8,13 @@ import '../../styles/Header.css';
 
 const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const [showLogin, setShowLogin] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
+
+  // Check if we're on the My Tasks page
+  const isMyTasksPage = location.pathname === '/my-tasks';
 
   const handleLogout = () => {
     logout();
@@ -43,21 +45,50 @@ const Header = () => {
     }
   };
 
-  const navigateToMyTasks = () => {
-    navigate('/my-tasks');
+  const handleTasksNavigation = () => {
+    if (isMyTasksPage) {
+      navigate('/');
+    } else {
+      navigate('/my-tasks');
+    }
   };
+
+  const handleStatusFilter = (e) => {
+    const status = e.target.value;
+    const searchParams = new URLSearchParams(location.search);
+    
+    // Reset page to 1 when status changes
+    searchParams.delete('page');
+    
+    if (status) {
+      searchParams.set('status', status);
+    } else {
+      searchParams.delete('status');
+    }
+    
+    navigate(`${location.pathname}?${searchParams.toString()}`);
+  };
+
+  // Get current status filter from URL
+  const currentStatus = new URLSearchParams(location.search).get('status') || '';
 
   if (!isAuthenticated) return null;
 
   return (
     <header className="app-header">
       <div className="header-left">
-        <h1 className="app-title">Task Manager</h1>
-        <button 
-          onClick={navigateToMyTasks} 
-          className="my-tasks-button"
+        <h1 
+          className="app-title" 
+          onClick={() => navigate('/')}
+          style={{ cursor: 'pointer' }}
         >
-          My Tasks
+          Task Manager
+        </h1>
+        <button 
+          onClick={handleTasksNavigation} 
+          className="tasks-toggle-button"
+        >
+          {isMyTasksPage ? 'All Tasks' : 'My Tasks'}
         </button>
       </div>
       
@@ -77,13 +108,8 @@ const Header = () => {
         
         <div className="task-controls">
           <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              // Update URL or trigger task refresh with new filter
-              const currentPath = window.location.pathname;
-              navigate(`${currentPath}?status=${e.target.value}`);
-            }}
+            value={currentStatus}
+            onChange={handleStatusFilter}
             className="status-filter"
           >
             <option value="">All Statuses</option>

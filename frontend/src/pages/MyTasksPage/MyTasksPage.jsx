@@ -1,22 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import API from '../../api/endpoints';
-import TasksList from '../../components/tasks/TasksList';
-import { apiFetch } from '../../api/fetch';
+import TasksPageTemplate from '../../components/tasks/TasksPageTemplate';
 
 const MyTasksPage = () => {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [pagination, setPagination] = useState({
-    current_page: 1,
-    total_pages: 1,
-    page_size: 10,
-    total_items: 0
-  });
-
-  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const statusFilter = searchParams.get('status') || '';
 
   const buildEndpoint = useCallback((page = 1) => {
     const url = new URL(API.TASKS.MY_TASKS, window.location.origin);
@@ -28,62 +18,10 @@ const MyTasksPage = () => {
     return url.toString();
   }, [statusFilter]);
 
-  const fetchTasks = useCallback(async (page = 1) => {
-    try {
-      setLoading(true);
-      const endpoint = buildEndpoint(page);
-      console.log('Fetching my tasks from:', endpoint);
-      
-      const response = await apiFetch(endpoint, {});
-      
-      if (response && response.results) {
-        setTasks(response.results);
-        setPagination(response.pagination || {
-          current_page: page,
-          total_pages: Math.ceil((response.count || response.results.length) / 10),
-          page_size: 10,
-          total_items: response.count || response.results.length
-        });
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to fetch my tasks');
-    } finally {
-      setLoading(false);
-    }
-  }, [buildEndpoint]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchTasks(pagination.current_page);
-    }
-  }, [fetchTasks, isAuthenticated]);
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.total_pages) {
-      fetchTasks(newPage);
-    }
-  };
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  if (loading && tasks.length === 0) {
-    return <div className="loading">Loading my tasks...</div>;
-  }
-
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
-
   return (
-    <TasksList
+    <TasksPageTemplate
       title="My Tasks"
-      tasks={tasks}
-      statusFilter={statusFilter}
-      setStatusFilter={setStatusFilter}
-      pagination={pagination}
-      onPageChange={handlePageChange}
+      buildEndpoint={buildEndpoint}
     />
   );
 };
