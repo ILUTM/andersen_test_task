@@ -6,7 +6,7 @@ import TasksList from './TasksList';
 
 const TasksPageTemplate = ({ 
   title, 
-  buildEndpoint, // Changed from buildEndpoint to endpointBuilder
+  buildEndpoint, // Keeping your preferred prop name
   redirectCondition = () => false,
   redirectPath = '/',
   emptyMessage = null,
@@ -18,6 +18,7 @@ const TasksPageTemplate = ({
   const navigate = useNavigate();
   const initialLoad = useRef(true);
   const prevSearch = useRef(location.search);
+  const prevBuildEndpoint = useRef(buildEndpoint);
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,6 @@ const TasksPageTemplate = ({
     total_items: 0
   });
 
-  // Stable fetch function that doesn't depend on endpointBuilder
   const fetchTasks = useCallback(async (page = 1) => {
     try {
       setLoading(true);
@@ -53,7 +53,7 @@ const TasksPageTemplate = ({
     } finally {
       setLoading(false);
     }
-  }, [errorMessage]); // Removed endpointBuilder from dependencies
+  }, [errorMessage, buildEndpoint]); // Re-added buildEndpoint to dependencies
 
   // Initial load
   useEffect(() => {
@@ -63,20 +63,22 @@ const TasksPageTemplate = ({
     }
   }, [isAuthenticated, redirectCondition, fetchTasks]);
 
-  // Handle URL changes (pagination, filters)
+  // Handle URL and endpoint changes
   useEffect(() => {
     if (!isAuthenticated || redirectCondition()) {
       navigate(redirectPath);
       return;
     }
 
-    // Only fetch if search params actually changed
-    if (location.search !== prevSearch.current) {
-      const page = new URLSearchParams(location.search).get('page') || 1;
+    // Check if either search params or buildEndpoint changed
+    const page = new URLSearchParams(location.search).get('page') || 1;
+    
+    if (location.search !== prevSearch.current || buildEndpoint !== prevBuildEndpoint.current) {
       fetchTasks(Number(page));
       prevSearch.current = location.search;
+      prevBuildEndpoint.current = buildEndpoint;
     }
-  }, [location.search, isAuthenticated, redirectCondition, redirectPath, navigate, fetchTasks]);
+  }, [location.search, isAuthenticated, redirectCondition, redirectPath, navigate, fetchTasks, buildEndpoint]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.total_pages) {

@@ -44,8 +44,7 @@ export const apiFetch = async (url, options = {}) => {
   }
 };
 
-// Try to refresh access token
-export const tryRefreshToken = async () => {
+const tryRefreshToken = async () => {
   try {
     const response = await fetch(API.AUTH.TOKEN.REFRESH, {
       method: 'POST',
@@ -55,13 +54,18 @@ export const tryRefreshToken = async () => {
       },
     });
 
-    if (!response.ok) {
+    if (response.status === 401 || !response.ok) {
+      // Clear tokens if refresh fails
+      clearAuthTokens();
       return null;
     }
 
-    return await response.json();
+    const data = await response.json();
+    storeAccessToken(data.access);
+    return data;
   } catch (error) {
     console.error('Refresh token failed:', error);
+    clearAuthTokens();
     return null;
   }
 };
@@ -73,7 +77,6 @@ export const storeAccessToken = (access) => {
 
 export const clearAuthTokens = () => {
   localStorage.removeItem('access_token');
-  // Backend should handle cookie invalidation
 };
 
 export const getAccessToken = () => {

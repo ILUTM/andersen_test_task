@@ -113,6 +113,16 @@ class LoginViewSet(viewsets.ViewSet):
         
         refresh = RefreshToken.for_user(user)
         
+        # Debug print for login tokens
+        print("\n=== LOGIN TOKEN DEBUG ===")
+        print(f"Generated Refresh Token: {refresh}")
+        print(f"Refresh Token (string): {str(refresh)}")
+        print(f"Access Token: {refresh.access_token}")
+        print(f"User ID: {user.id}")
+        print(f"Token Type: {refresh.payload.get('token_type', 'N/A')}")
+        print(f"Expiration: {refresh.payload.get('exp', 'N/A')}")
+        print("=======================\n")
+        
         response = Response(
             CreateResponse.create_user_response(user, token_data=refresh),
             status=status.HTTP_200_OK
@@ -124,32 +134,61 @@ class LoginViewSet(viewsets.ViewSet):
             max_age=1209600,  # 14 days
             httponly=True,
             secure=True,
-            samesite='None',
-            path='/api/token/refresh/',
+            samesite='Lax',
+            path='/',
+            domain=None,
         )
         return response
 
 
 class LogoutViewSet(viewsets.ViewSet):
     def create(self, request):
-        try:
-            refresh_token = request.COOKIES.get('refresh_token')
-            if refresh_token:
+        # Debug print before logout
+        print("\n=== PRE-LOGOUT DEBUG ===")
+        print(f"Incoming cookies: {request.COOKIES}")
+        print(f"Headers: {request.headers}")
+        
+        # First try to blacklist token if cookie was present
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token:
+            try:
+                print(f"Attempting to blacklist token: {refresh_token[:15]}...")
                 token = RefreshToken(refresh_token)
                 token.blacklist()
-            
-            response = Response(
-                {"detail": "Successfully logged out."},
-                status=status.HTTP_200_OK
-            )
-            response.delete_cookie('refresh_token')
-            return response
-        except Exception as e:
-            return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+                print("Token successfully blacklisted")
+                print(f"Token payload: {token.payload}")
+            except TokenError as e:
+                print(f"Token blacklist error: {str(e)}")
+        else:
+            print("No refresh_token cookie found to blacklist")
+        
+        response = Response(
+            {"detail": "Successfully logged out."},
+            status=status.HTTP_200_OK
+        )
+        
+        # Debug print for cookie clearing
+        print("\n=== COOKIE CLEARING DEBUG ===")
+        print("Setting empty cookie with immediate expiration")
+        
+        # Clear cookie with same settings as login
+        response.set_cookie(
+            key='refresh_token',
+            value='Token from South Park',  # Easily identifiable in browser dev tools
+            max_age=0,
+            expires=0,  # Immediate expiration
+            path='/',
+            domain=None,
+            secure=True,
+            httponly=True,
+            samesite='Lax'
+        )
+        
+        print("=== POST-LOGOUT RESPONSE HEADERS ===")
+        print(f"Set-Cookie header: {response.headers.get('set-cookie', 'N/A')}")
+        print("===============================\n")
+        
+        return response
 
 class TaskPaginator(PageNumberPagination):
     page_size = 10

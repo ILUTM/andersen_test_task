@@ -118,10 +118,23 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await apiFetch(API.AUTH.LOGOUT, { method: 'POST' });
+      await fetch(API.AUTH.LOGOUT, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      
+      // Clear client-side tokens and state
+      clearAuthTokens();
+      setUser(null);
+      setIsAuthenticated(false);
+      setAuthModalType('login');
     } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
+      console.error('Logout error:', error);
+      // Still clear client-side state even if server logout failed
       clearAuthTokens();
       setUser(null);
       setIsAuthenticated(false);

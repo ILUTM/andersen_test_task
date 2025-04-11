@@ -9,14 +9,14 @@ const API = {
       REFRESH: `${API_BASE}/api/token/refresh/`,
       VERIFY: `${API_BASE}/api/token/verify/`,
     },
-    ME: `${API_BASE}/api/users/me/`, // For the 'me' action
+    ME: `${API_BASE}/api/users/me/`, 
     LOGOUT: `${API_BASE}/api/logout/`,
     UPDATE_FIELD: `${API_BASE}/api/users/update_field/`,
   },
   USERS: {
     BASE: `${API_BASE}/api/users/`,
     BY_ID: (id) => `${API_BASE}/api/users/${id}/`,
-    GET_USER: (id) => `${API_BASE}/api/users/${id}/get_user/`, // For update_field action
+    GET_USER: (id) => `${API_BASE}/api/users/${id}/get_user/`, 
   },
   TASKS: {
     BASE: `${API_BASE}/api/tasks/`,
