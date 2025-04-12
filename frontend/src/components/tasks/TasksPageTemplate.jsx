@@ -6,7 +6,7 @@ import TasksList from './TasksList';
 
 const TasksPageTemplate = ({ 
   title, 
-  buildEndpoint, // Keeping your preferred prop name
+  buildEndpoint, 
   redirectCondition = () => false,
   redirectPath = '/',
   emptyMessage = null,
@@ -88,6 +88,22 @@ const TasksPageTemplate = ({
     }
   };
 
+  const handleTaskUpdated = useCallback((updatedTasks) => {
+    setTasks(updatedTasks);
+    
+    if (updatedTasks.length < tasks.length) {
+      const newTotalItems = pagination.total_items - 1;
+      const newTotalPages = Math.ceil(newTotalItems / pagination.page_size);
+      
+      setPagination(prev => ({
+        ...prev,
+        total_items: newTotalItems,
+        total_pages: newTotalPages,
+        current_page: Math.min(prev.current_page, newTotalPages)
+      }));
+    }
+  }, [tasks.length, pagination.total_items, pagination.page_size]);
+
   if (!isAuthenticated) {
     return emptyMessage || <div>Please login to view this content</div>;
   }
@@ -106,6 +122,7 @@ const TasksPageTemplate = ({
       tasks={tasks}
       pagination={pagination}
       onPageChange={handlePageChange}
+      onTaskUpdated={handleTaskUpdated} 
     />
   );
 };

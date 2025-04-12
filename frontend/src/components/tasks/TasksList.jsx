@@ -1,3 +1,4 @@
+// D:\andersen_task\frontend\src\components\tasks\TasksList.jsx
 import TaskCard from './TaskCard';
 import TaskControls from './TaskControls';
 import PaginationControls from './PaginationControls';
@@ -9,8 +10,19 @@ const TasksList = ({
   statusFilter,
   setStatusFilter,
   pagination,
-  onPageChange
+  onPageChange,
+  onTaskUpdated 
 }) => {
+  const handleTaskUpdated = (updatedTask) => {
+    if (!updatedTask) {
+      onTaskUpdated(tasks.filter(task => task.id !== updatedTask.id));
+    } else {
+      onTaskUpdated(tasks.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      ));
+    }
+  };
+
   return (
     <div className="tasks-page">
       <h1>{title}</h1>
@@ -21,7 +33,11 @@ const TasksList = ({
         <>
           <div className="task-list">
             {tasks.map(task => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard 
+                key={task.id} 
+                task={task}
+                onTaskUpdated={handleTaskUpdated} // Pass to TaskCard
+              />
             ))}
           </div>
           

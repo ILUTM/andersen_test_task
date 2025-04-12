@@ -112,17 +112,6 @@ class LoginViewSet(viewsets.ViewSet):
         user = serializer.validated_data['user']
         
         refresh = RefreshToken.for_user(user)
-        
-        # Debug print for login tokens
-        print("\n=== LOGIN TOKEN DEBUG ===")
-        print(f"Generated Refresh Token: {refresh}")
-        print(f"Refresh Token (string): {str(refresh)}")
-        print(f"Access Token: {refresh.access_token}")
-        print(f"User ID: {user.id}")
-        print(f"Token Type: {refresh.payload.get('token_type', 'N/A')}")
-        print(f"Expiration: {refresh.payload.get('exp', 'N/A')}")
-        print("=======================\n")
-        
         response = Response(
             CreateResponse.create_user_response(user, token_data=refresh),
             status=status.HTTP_200_OK
@@ -143,20 +132,12 @@ class LoginViewSet(viewsets.ViewSet):
 
 class LogoutViewSet(viewsets.ViewSet):
     def create(self, request):
-        # Debug print before logout
-        print("\n=== PRE-LOGOUT DEBUG ===")
-        print(f"Incoming cookies: {request.COOKIES}")
-        print(f"Headers: {request.headers}")
-        
-        # First try to blacklist token if cookie was present
+
         refresh_token = request.COOKIES.get('refresh_token')
         if refresh_token:
             try:
-                print(f"Attempting to blacklist token: {refresh_token[:15]}...")
                 token = RefreshToken(refresh_token)
                 token.blacklist()
-                print("Token successfully blacklisted")
-                print(f"Token payload: {token.payload}")
             except TokenError as e:
                 print(f"Token blacklist error: {str(e)}")
         else:
@@ -166,10 +147,6 @@ class LogoutViewSet(viewsets.ViewSet):
             {"detail": "Successfully logged out."},
             status=status.HTTP_200_OK
         )
-        
-        # Debug print for cookie clearing
-        print("\n=== COOKIE CLEARING DEBUG ===")
-        print("Setting empty cookie with immediate expiration")
         
         # Clear cookie with same settings as login
         response.set_cookie(
@@ -183,10 +160,6 @@ class LogoutViewSet(viewsets.ViewSet):
             httponly=True,
             samesite='Lax'
         )
-        
-        print("=== POST-LOGOUT RESPONSE HEADERS ===")
-        print(f"Set-Cookie header: {response.headers.get('set-cookie', 'N/A')}")
-        print("===============================\n")
         
         return response
 
@@ -239,9 +212,11 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """
         Custom permission handling:
-        - For update/delete actions: require IsTaskCreator
+        - For create/list: only require IsAuthenticated
+        - For update/delete: require IsTaskCreator
         """
-        if self.action in ['update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy', 
+                         'complete', 'update_title', 'update_description']:
             self.permission_classes = [IsAuthenticated, IsTaskCreator]
         return super().get_permissions()
 
@@ -356,6 +331,28 @@ class TaskViewSet(viewsets.ModelViewSet):
         description = request.data.get('description', '')
         
         task.description = description
+        task.save()
+        return Response(self.get_serializer(task).data)
+    
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, pk=None):
+        """Update task status to any valid status"""
+        task = self.get_object()
+        new_status = request.data.get('status')
+        
+        if not new_status:
+            return Response(
+                {"detail": "Status is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if new_status not in dict(Task.STATUS_CHOICES):
+            return Response(
+                {"detail": "Invalid status"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        task.status = new_status
         task.save()
         return Response(self.get_serializer(task).data)
 

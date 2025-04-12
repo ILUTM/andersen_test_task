@@ -65,8 +65,23 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'title', 'description', 'status', 'created_at', 'updated_at')
         read_only_fields = ('user', 'created_at', 'updated_at')
         
+    def get_can_edit_title(self, obj):
+        return obj.can_edit_title()
+        
     def validate_status(self, value):
         if value not in dict(Task.STATUS_CHOICES):
             raise serializers.ValidationError("Invalid status")
         return value
+        
+    def validate(self, data):
+        # Check title uniqueness when updating
+        if self.instance and 'title' in data:
+            if Task.objects.filter(
+                user=self.context['request'].user,
+                title=data['title']
+            ).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError(
+                    {"title": "You already have a task with this title"}
+                )
+        return data
      

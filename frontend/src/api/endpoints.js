@@ -26,6 +26,7 @@ const API = {
     COMPLETE: (id) => `${API_BASE}/api/tasks/${id}/complete/`,
     UPDATE_TITLE: (id) => `${API_BASE}/api/tasks/${id}/update_title/`,
     UPDATE_DESCRIPTION: (id) => `${API_BASE}/api/tasks/${id}/update_description/`,
+    UPDATE_STATUS: (id) => `${API_BASE}/api/tasks/${id}/update_status/`,
   },
 };
 
