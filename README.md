@@ -123,22 +123,27 @@
 
 | Endpoint                     | Method | Description                     | Parameters               | Request Body Example               | Response Example |
 |------------------------------|--------|---------------------------------|--------------------------|------------------------------------|------------------|
-| `/api/tasks/`                | GET    | List all tasks (paginated)      | `?status=COMPLETED`, `?ordering=-created_at` | - | `{ "results": [{task_data}], "pagination": {...}}` |
+| `/api/tasks/`                | GET    | List all tasks (paginated)      | `?status=COMPLETED`, `?ordering=-created_at`, `?user_id=<id>` | - | `{ "results": [{task_data}], "pagination": {...}}` |
 | `/api/tasks/`                | POST   | Create new task                 | -                        | `{ "title": "Task 1" }`           | `{task_data}` |
 | `/api/tasks/<task_id>/`      | GET    | Get task details                | -                        | -                                  | `{task_data}` |
 | `/api/tasks/<task_id>/`      | PUT    | Full task update                | -                        | `{ "title": "Updated", "status": "IN_PROGRESS" }` | `{task_data}` |
+| `/api/tasks/<task_id>/`      | PATCH  | Partial task update             | -                        | `{ "description": "New desc" }`   | `{task_data}` |
 | `/api/tasks/<task_id>/`      | DELETE | Delete task                     | -                        | -                                  | `204 No Content` |
 | `/api/tasks/my_tasks/`       | GET    | Get current user's tasks        | `?page=2&page_size=5`    | -                                  | `{ "results": [...] }` |
+| `/api/tasks/search/`         | GET    | Search tasks by title           | `?q=search_term`         | -                                  | `{ "results": [...] }` |
 | `/api/tasks/<task_id>/complete/` | POST | Mark as completed | - | - | `{task_data}` |
+| `/api/tasks/<task_id>/update_title/` | PATCH | Update task title (within 5 mins) | - | `{ "title": "New title" }` | `{task_data}` or `403` |
+| `/api/tasks/<task_id>/update_description/` | PATCH | Update description | - | `{ "description": "New desc" }` | `{task_data}` |
+| `/api/tasks/<task_id>/update_status/` | PATCH | Update status | - | `{ "status": "IN_PROGRESS" }` | `{task_data}` |
 
 **Task Object Structure**:
 ```json
 {
   "id": 1,
+  "user": "username",
   "title": "Task title",
   "description": "Optional description",
   "status": "NEW",
-  "user": {"id": 1, "username": "john123"},
   "created_at": "2025-04-13T10:00:00Z",
   "updated_at": "2025-04-13T10:00:00Z"
 }
