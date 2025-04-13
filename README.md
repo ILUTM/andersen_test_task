@@ -12,7 +12,7 @@
 ### ✅ Task Management
 - Full CRUD operations (owner-only edits)
 - Status tracking (New → In Progress → Completed)
-- Title edit window (5 minutes after creation)
+- Title edit possibility (5 minutes after creation)
 
 ### 🔍 Smart Filtering
 - Pagination (10 items/page)
