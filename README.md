@@ -1,90 +1,145 @@
-# ToDo List REST API (Andersen Test Task)
+# ToDo List Application (DRF + React)
 
-RESTful API application for managing a task list with React frontend and Django backend.
+   RESTful API application for managing a task list with React frontend and Django backend.
 
 ## Features
 
-- JWT Authentication
-- CRUD operations for tasks
-- Swagger/OpenAPI documentation
-- CORS configured for React development
-- Environment-specific configurations
-- PostgreSQL database support
+### 🔐 Authentication
+- JWT auth with secure cookies
+- User registration & login/logout
+- Profile management
 
-## Requirements
+### ✅ Task Management
+- Full CRUD operations (owner-only edits)
+- Status tracking (New → In Progress → Completed)
+- Title edit window (5 minutes after creation)
 
-- Python 3.9+
-- Node.js 16+
-- PostgreSQL 13+
-- npm/yarn
+### 🔍 Smart Filtering
+- Pagination (10 items/page)
+- Search by title/description
+- Filter by status/user
+- Sort by date/title
+
+### ⚙️ Technical
+- PostgreSQL database
+- Optimized queries with indexes
+- DRF-powered REST API
+- React frontend
+
+## Technologies Used
+
+### Backend
+
+- Python 3.12.7
+- Django 5.2
+- Django REST Framework 3.16.0
+- Django REST Framework Simple JWT 5.5.0
+- PostgreSQL 15 (via psycopg2 2.9.10)
+- Django CORS Headers 4.7.0
+- Django Filter 25.1
+- Python Dotenv 1.1.0
+
+### Frontend
+
+- Node.js 20.18.0
+- React 19.1.0
+- React Router DOM 7.5.0
+- React Scripts 5.0.1
+- CSS Modules for styling
 
 ## Installation
 
+### Prerequisites
+
+- Python 3.12+
+- Node.js 20+
+- PostgreSQL 15+
+- pgAdmin 4 (optional)
+- Git
+
 ### Backend Setup
 
-1. Create and activate virtual environment:
+1. Clone the repository:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate     # Windows
-
-2. Install dependencies:
+   git clone https://github.com/ILUTM/andersen_test_task.git
+   cd backend
+2. Create and activate virtual environment:
+   ```bash
+   python -m venv .venv
+   # On Windows:
+   .\.venv\Scripts\Activate.ps1
+   # On macOS/Linux:
+   source .venv/bin/activate
+3. Install Python dependencies:
+   ```bash
    pip install -r requirements.txt
-
-3. Configure environment variables:
-   cp .env.example .env
-   nano .env  # Edit with your values
-
-4. Run migrations:
+4. Configure environment variables:
+   Copy .env.example to .env
+   Set your PostgreSQL credentials:
+   ```bash
+   POSTGRES_DB=todo_dev
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   POSTGRES_HOST=localhost
+   POSTGRES_PORT=5432
+   DJANGO_SECRET_KEY=django-key
+   DJANGO_DEBUG=True
+   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+5. Run database migrations:
+   ```bash
    python manage.py migrate
-
-5. Create superuser (optional):
-   python manage.py createsuperuser
-
 6. Start development server:
+   ```bash
    python manage.py runserver
 
 ### Frontend Setup
-
-1. Install dependencies:
-   cd frontend
+1. Navigate to frontend directory:
+   ```bash
+   cd ../frontend
+2. Install Node.js dependencies:
+   ```bash
    npm install
-
-2. Start development server:
+3. Configure environment variables:
+   Copy .env.example to .env
+   Set API base URL:
+   ```bash
+   REACT_APP_API_BASE_URL=http://localhost:8000
+4. Start development server:
+   ```bash
    npm start
 
-### Environment Configuration
+## API Documentation
 
-Create .env file in project root:
+### Authentication Endpoints
 
-### Development Configuration
-DJANGO_ENVIRONMENT=development
-DJANGO_SECRET_KEY=your-secret-key-here
-DEBUG=True
+| Endpoint         | Method | Description                     | Request Body Example                        | Success Response                          |
+|------------------|--------|---------------------------------|---------------------------------------------|-------------------------------------------|
+| `/api/auth/register/` | POST | Register new user | `{ "first_name": "John", "username": "john123", "password": "secure123" }` | `{ "user": {user_data}, "refresh": "xxx", "access": "xxx" }` |
+| `/api/auth/login/`    | POST | User login        | `{ "username": "john123", "password": "secure123" }` | Sets HTTP-only cookie + returns `{ "user": {user_data}, "access": "xxx" }` |
+| `/api/auth/refresh/`  | POST | Refresh token     | (Uses cookie)                              | New `access` token |
+| `/api/auth/logout/`   | POST | Invalidate tokens | (Uses cookie)                              | Clears cookie + `{ "detail": "Logged out" }` |
 
-# Database
-POSTGRES_DB=todo_dev
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+### Task Endpoints
 
-# CORS
-ALLOWED_HOSTS=localhost,127.0.0.1
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+| Endpoint                     | Method | Description                     | Parameters               | Request Body Example               | Response Example |
+|------------------------------|--------|---------------------------------|--------------------------|------------------------------------|------------------|
+| `/api/tasks/`                | GET    | List all tasks (paginated)      | `?status=COMPLETED`, `?ordering=-created_at` | - | `{ "results": [{task_data}], "pagination": {...}}` |
+| `/api/tasks/`                | POST   | Create new task                 | -                        | `{ "title": "Task 1" }`           | `{task_data}` |
+| `/api/tasks/<task_id>/`      | GET    | Get task details                | -                        | -                                  | `{task_data}` |
+| `/api/tasks/<task_id>/`      | PUT    | Full task update                | -                        | `{ "title": "Updated", "status": "IN_PROGRESS" }` | `{task_data}` |
+| `/api/tasks/<task_id>/`      | DELETE | Delete task                     | -                        | -                                  | `204 No Content` |
+| `/api/tasks/my_tasks/`       | GET    | Get current user's tasks        | `?page=2&page_size=5`    | -                                  | `{ "results": [...] }` |
+| `/api/tasks/<task_id>/complete/` | POST | Mark as completed | - | - | `{task_data}` |
 
-### Production Configuration
-DJANGO_ENVIRONMENT=production
-DJANGO_SECRET_KEY=your-production-secret-key
-DEBUG=False
+**Task Object Structure**:
+```json
+{
+  "id": 1,
+  "title": "Task title",
+  "description": "Optional description",
+  "status": "NEW",
+  "user": {"id": 1, "username": "john123"},
+  "created_at": "2025-04-13T10:00:00Z",
+  "updated_at": "2025-04-13T10:00:00Z"
+}
 
-# Database
-POSTGRES_DB=todo_prod
-POSTGRES_USER=prod_user
-POSTGRES_PASSWORD=strongpassword
-POSTGRES_HOST=prod-db-host
-POSTGRES_PORT=5432
-
-# Security
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-CSRF_TRUSTED_ORIGINS=https://yourdomain.com
