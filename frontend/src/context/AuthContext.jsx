@@ -93,7 +93,10 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
       setAuthModalType(null); // Close modal on successful login
-      return { success: true };
+      return {
+        success: true,
+        user: userData
+      };
     } catch (error) {
       return { success: false, error: error.message };
     }

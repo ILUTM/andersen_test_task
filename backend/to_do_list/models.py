@@ -56,6 +56,10 @@ class Task(models.Model):
         """Check if title can still be edited (within 5 minutes of creation)"""
         return timezone.now() < self.created_at + timedelta(minutes=5)
     
+    def can_change_to_new(self):
+        """Check if status can be changed to NEW"""
+        return self.status == 'NEW'
+    
     class Meta:
         unique_together = ('user', 'title')
         indexes = [

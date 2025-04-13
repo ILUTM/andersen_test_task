@@ -54,7 +54,7 @@ const TasksPageTemplate = ({
       setLoading(false);
     }
   }, [errorMessage, buildEndpoint]); // Re-added buildEndpoint to dependencies
-
+  
   // Initial load
   useEffect(() => {
     if (initialLoad.current && isAuthenticated && !redirectCondition()) {

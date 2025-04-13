@@ -20,6 +20,8 @@ const LoginModal = ({ switchToRegister }) => {
 
     if (!result.success) {
       setError(result.error || 'Login failed');
+    } else {
+      window.location.reload();
     }
   };
 

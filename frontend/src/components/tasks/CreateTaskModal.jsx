@@ -18,28 +18,42 @@ const CreateTaskModal = ({ isOpen, onClose, onCreate }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <button className="close-button" onClick={onClose}>×</button>
-        <h2>Create New Task</h2>
+        <div className="modal-header">
+          <h2>Create New Task</h2>
+          <button className="close-button" onClick={onClose} aria-label="Close">
+            <span className="close-icon">×</span>
+          </button>
+        </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Title</label>
+            <label htmlFor="task-title">Title</label>
             <input
+              id="task-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter task title"
               required
             />
           </div>
           <div className="form-group">
-            <label>Description</label>
+            <label htmlFor="task-description">Description</label>
             <textarea
+              id="task-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter task description (optional)"
+              rows="4"
             />
           </div>
-          <button type="submit" className="submit-button">
-            Create Task
-          </button>
+          <div className="modal-footer">
+            <button type="button" className="cancel-button" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="submit-button">
+              Create Task
+            </button>
+          </div>
         </form>
       </div>
     </div>

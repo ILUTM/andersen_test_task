@@ -336,7 +336,6 @@ class TaskViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['patch'])
     def update_status(self, request, pk=None):
-        """Update task status to any valid status"""
         task = self.get_object()
         new_status = request.data.get('status')
         
@@ -349,6 +348,12 @@ class TaskViewSet(viewsets.ModelViewSet):
         if new_status not in dict(Task.STATUS_CHOICES):
             return Response(
                 {"detail": "Invalid status"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not task.can_change_to_new() and new_status == 'NEW':
+            return Response(
+                {"detail": "Cannot set status back to NEW once task has progressed"},
                 status=status.HTTP_400_BAD_REQUEST
             )
             

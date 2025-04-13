@@ -84,4 +84,12 @@ class TaskSerializer(serializers.ModelSerializer):
                     {"title": "You already have a task with this title"}
                 )
         return data
+    
+    def validate_status(self, value):
+        instance = self.instance
+        if instance and instance.status != 'NEW' and value == 'NEW':
+            raise serializers.ValidationError(
+                "Cannot set status back to NEW once task has progressed"
+            )
+        return value
      

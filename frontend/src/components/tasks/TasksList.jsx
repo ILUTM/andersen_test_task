@@ -1,6 +1,4 @@
-// D:\andersen_task\frontend\src\components\tasks\TasksList.jsx
 import TaskCard from './TaskCard';
-import TaskControls from './TaskControls';
 import PaginationControls from './PaginationControls';
 import '../../styles/TasksList.css';
 

@@ -19,8 +19,13 @@ export const apiFetch = async (url, options = {}) => {
         ...defaultHeaders,
         ...options.headers,
       },
-      credentials: 'include', // For cookies
+      credentials: 'include', 
     });
+
+    // Handle 204 No Content responses
+    if (response.status === 204) {
+      return null;
+    }
 
     // If unauthorized, try to refresh token
     if (response.status === 401 && !url.includes('/token/refresh/')) {
