@@ -91,6 +91,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserRegistrationViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
+    permission_classes = [] 
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -106,6 +107,7 @@ class UserRegistrationViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_201_CREATED, headers=headers)
         
 class LoginViewSet(viewsets.ViewSet):
+    permission_classes = []
     def create(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

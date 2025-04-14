@@ -56,7 +56,7 @@ class TaskTests(APITestCase):
         response = self.client.post(self.task_list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Task.objects.count(), 2)
-        self.assertEqual(response.data['user'], self.user.id)
+        self.assertEqual(response.data['user'], self.user.username)
 
     def test_create_task_invalid_data(self):
         data = {
