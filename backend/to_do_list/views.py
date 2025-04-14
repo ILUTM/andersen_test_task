@@ -1,5 +1,7 @@
+from datetime import timedelta
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
@@ -303,6 +305,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'])
     def update_title(self, request, pk=None):
         task = self.get_object()
+        print(f"Checking title edit for task created at {task.created_at}")  # Debug logging
+        print(f"Current time: {timezone.now()}")  # Debug logging
+        print(f"Can edit title: {task.can_edit_title()}")  # Debug logging
         
         if not task.can_edit_title():
             return Response(
@@ -362,6 +367,16 @@ class TaskViewSet(viewsets.ModelViewSet):
         task.status = new_status
         task.save()
         return Response(self.get_serializer(task).data)
+    
+    @action(detail=True, methods=['get'])
+    def can_edit_title(self, request, pk=None):
+        task = self.get_object()
+        return Response({
+            'can_edit': task.can_edit_title(),
+            'created_at': task.created_at,
+            'current_time': timezone.now(),
+            'cutoff_time': task.created_at + timedelta(minutes=5)
+        })
 
     def destroy(self, request, *args, **kwargs):
         task = self.get_object()

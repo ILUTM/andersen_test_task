@@ -46,10 +46,16 @@
     letter-spacing: 0.5px;
   }
 
-.description {
+  .description {
     color: #666;
     margin-bottom: 10px;
-    text-align: center;
+    white-space: pre-line;
+    text-align: left;
+    line-height: 1.5;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #e0e0e0;
 }
 
 .task-meta {
@@ -202,4 +208,18 @@
     border-radius: 4px;
     margin-bottom: 10px;
     text-align: center;
+}
+
+.disabled-title {
+    background-color: #f5f5f5;
+    color: #888;
+    cursor: not-allowed;
+    border-color: #e0e0e0;
+}
+
+.edit-disabled-message {
+    font-size: 0.8rem;
+    color: #ff6b6b;
+    margin-top: 5px;
+    font-style: italic;
 }

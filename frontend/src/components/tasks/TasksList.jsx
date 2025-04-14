@@ -11,12 +11,12 @@ const TasksList = ({
   onPageChange,
   onTaskUpdated 
 }) => {
-  const handleTaskUpdated = (updatedTask) => {
-    if (!updatedTask) {
-      onTaskUpdated(tasks.filter(task => task.id !== updatedTask.id));
-    } else {
+  const handleTaskUpdated = (updateInfo) => {
+    if (updateInfo?.deleted) {
+      onTaskUpdated(tasks.filter(task => task.id !== updateInfo.id));
+    } else if (updateInfo) {
       onTaskUpdated(tasks.map(task => 
-        task.id === updatedTask.id ? updatedTask : task
+        task.id === updateInfo.id ? updateInfo : task
       ));
     }
   };
