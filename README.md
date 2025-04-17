@@ -110,6 +110,78 @@
    ```bash
    npm start
 
+## Docker Setup
+
+### Prerequisites
+- Docker installed
+- Docker Compose installed
+
+### Running with Docker
+
+1. **Clone the repository** (if not already done):
+   ```bash
+   git clone https://github.com/ILUTM/andersen_test_task.git
+   cd andersen_test_task
+
+2. Configure environment variables:
+   Backend: Copy backend/.env.example to backend/.env
+   ```bash
+   POSTGRES_HOST=db  # Important for Docker
+   # Keep other variables as is
+   ```
+   Frontend: Copy frontend/.env.example to frontend/.env
+   ```bash
+   REACT_APP_API_BASE_URL=http://backend:8000  # Important for Docker
+
+3. Build and start containers:
+   ```bash
+   docker-compose up --build
+
+4. Access the applications:
+   Frontend: http://localhost:3000
+   Backend API: http://localhost:8000
+   PostgreSQL: Accessible on port 5432 (credentials from .env.db)
+
+## Development Workflow
+
+### For local development without Docker:
+1. Use `REACT_APP_API_BASE_URL=http://localhost:8000` in frontend `.env`
+2. Use `POSTGRES_HOST=localhost` in backend `.env`
+3. Run backend and frontend separately as described in Installation
+
+### Switching between Docker and local development:
+1. **When preparing for Docker deployment**:
+   - Change `REACT_APP_API_BASE_URL` to `http://backend:8000` in frontend `.env`
+   - Ensure `POSTGRES_HOST=db` in backend `.env`
+
+2. **When returning to local development**:
+   - Change `REACT_APP_API_BASE_URL` back to `http://localhost:8000`
+   - Change `POSTGRES_HOST` back to `localhost`
+
+## Useful Docker Commands
+
+| Command | Description |
+|---------|-------------|
+| `docker-compose up --build` | Build and start all services |
+| `docker-compose down` | Stop and remove containers |
+| `docker-compose logs -f` | View container logs |
+| `docker-compose exec backend bash` | Access backend container shell |
+| `docker-compose exec db psql -U postgres` | Access PostgreSQL directly |
+
+## Troubleshooting
+
+### Connection issues:
+   - If frontend can't reach backend, verify `REACT_APP_API_BASE_URL` is set correctly
+   - Check backend logs for database connection errors
+
+### Port conflicts:
+   - Ensure ports 3000 (frontend), 8000 (backend), and 5432 (PostgreSQL) are available
+
+### Database issues:
+   To reset the database:
+   ```bash
+   docker-compose down -v
+   docker-compose up
 ## API Documentation
 
 ### Authentication Endpoints

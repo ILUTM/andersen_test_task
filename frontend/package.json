@@ -16,10 +16,11 @@
   "proxy": "http://backend:8000",
   "scripts": {
     "start": "react-scripts start",
+    "start:docker": "react-scripts start",
     "build": "react-scripts build",
+    "build:docker": "sh -c 'cp .env.docker .env && react-scripts build'",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "start:docker": "REACT_APP_API_BASE_URL=http://backend:8000 react-scripts start"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [

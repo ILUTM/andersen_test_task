@@ -45,3 +45,4 @@ ehthumbs.db
 # Project specific
 project_files.py
 .env.db
+.env.docker

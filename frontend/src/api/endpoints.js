@@ -1,6 +1,8 @@
-const API_BASE = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:8000' 
-  : '/';
+const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+if (!API_BASE) {
+  throw new Error('API base URL is not configured! Check your .env file');
+}
 
 const API = {
   AUTH: {
