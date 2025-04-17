@@ -18,7 +18,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-development-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'backend', 'frontend', '0.0.0.0']
 
 # Application definition
 INSTALLED_APPS = [
@@ -170,15 +170,16 @@ SIMPLE_JWT = {
 SECURE_SSL_REDIRECT=False
 SESSION_COOKIE_SECURE=False
 CSRF_COOKIE_SECURE=False
+
+CSRF_TRUSTED_ORIGINS = [origin for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin]    
+ 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Environment-specific overrides
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 if ENVIRONMENT == 'production':
     DEBUG = False
     ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
-    CSRF_TRUSTED_ORIGINS = [origin for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin]    
-    # Security settings
     SECURE_HSTS_SECONDS = 3600
-    
     # Production-specific static files settings
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 else:
