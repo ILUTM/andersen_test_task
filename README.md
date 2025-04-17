@@ -91,6 +91,8 @@
 6. Start development server:
    ```bash
    python manage.py runserver
+7. configure db variables like in backend/env.db.example
+   copy .env.db.example to .env.db and set variables
 
 ### Frontend Setup
 1. Navigate to frontend directory:
